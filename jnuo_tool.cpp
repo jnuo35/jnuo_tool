@@ -4,8 +4,8 @@
 using namespace std;
 int fc_using[8]={0};
 bool program_running = true;
-// ¿ØÖÆÌ¨ĞÅºÅ´¦Àíº¯Êı
-// ³ÌĞò¿ªÊ¼ÈÕÖ¾
+// æ§åˆ¶å°ä¿¡å·å¤„ç†å‡½æ•°
+// ç¨‹åºå¼€å§‹æ—¥å¿—
 void log_program_start() {
     time_t now = time(NULL);
     tm* local_time = localtime(&now);
@@ -23,7 +23,7 @@ void log_program_start() {
     fclose(log_file);
 }
 
-// ³ÌĞò½áÊøÈÕÖ¾
+// ç¨‹åºç»“æŸæ—¥å¿—
 void log_program_end() {
     time_t now = time(NULL);
     tm* local_time = localtime(&now);
@@ -33,7 +33,7 @@ void log_program_end() {
     
     FILE* log_file = fopen("app.log", "a");
     if (!log_file) {
-        log_file = fopen("app.log", "a"); // ³¢ÊÔÓÃ×·¼ÓÄ£Ê½
+        log_file = fopen("app.log", "a"); // å°è¯•ç”¨è¿½åŠ æ¨¡å¼
         if (!log_file) return;
     }
     
@@ -46,9 +46,9 @@ BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType)
     {
     case CTRL_C_EVENT:        // Ctrl+C
     case CTRL_BREAK_EVENT:    // Ctrl+Break
-    case CTRL_CLOSE_EVENT:    // µã»÷¹Ø±Õ°´Å¥
-    case CTRL_LOGOFF_EVENT:   // ÓÃ»§×¢Ïú
-    case CTRL_SHUTDOWN_EVENT: // ÏµÍ³¹Ø»ú
+    case CTRL_CLOSE_EVENT:    // ç‚¹å‡»å…³é—­æŒ‰é’®
+    case CTRL_LOGOFF_EVENT:   // ç”¨æˆ·æ³¨é”€
+    case CTRL_SHUTDOWN_EVENT: // ç³»ç»Ÿå…³æœº
         if (program_running) {
             program_running = false;
             log_program_end();
@@ -59,18 +59,18 @@ BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType)
 }
 void start()
 {
-	cout<<"jnuoÖÆÔì";
+	cout<<"jnuoåˆ¶é€ ";
 	Sleep(1000);
 	system("cls");
 	for(int i=1;i<=2;i++) 
 	{
-		cout<<"jnuoÖÆÔì.";
+		cout<<"jnuoåˆ¶é€ .";
 		Sleep(1000);
 		system("cls");
-		cout<<"jnuoÖÆÔì..";
+		cout<<"jnuoåˆ¶é€ ..";
 		Sleep(1000);
 		system("cls");
-		cout<<"jnuoÖÆÔì...";
+		cout<<"jnuoåˆ¶é€ ...";
 		Sleep(1000);
 		system("cls");
 	}
@@ -92,45 +92,184 @@ void log(int function_id) {
     fprintf(log_file, "[%s] used:%d, running:%d\n", time_str, function_id, running_status ? 1 : 0);
     fclose(log_file);
 }
+char* strrstr(const char* str, const char* substr) {
+    if (!str || !substr) return NULL;
+    
+    const char* last = NULL;
+    const char* current = str;
+    
+    while ((current = strstr(current, substr)) != NULL) {
+        last = current;
+        current++; // ç»§ç»­æŸ¥æ‰¾ä¸‹ä¸€ä¸ª
+    }
+    
+    return (char*)last;
+}
 void read_log_detailed() {
     FILE* log_file = fopen("app.log", "r");
     if (!log_file) {
-        printf("Ã»ÓĞÕÒµ½ÈÕÖ¾ÎÄ¼ş\n");
+        printf("æ²¡æœ‰æ‰¾åˆ°æ—¥å¿—æ–‡ä»¶\n");
         system("pause");
         return;
     }
     
-    printf("===== Ê¹ÓÃÈÕÖ¾¼ÇÂ¼ =====\n\n");
+    printf("æ­£åœ¨è¯»å–ä¸Šæ¬¡ä½¿ç”¨è®°å½•å¹¶æ¢å¤åŠŸèƒ½...\n");
     
-    char line[256];
-    int line_count = 0;
-    while (fgets(line, sizeof(line), log_file)) {
-        line_count++;
-        printf("%d. %s", line_count, line);
+    // å…ˆæ‰¾åˆ°æ–‡ä»¶æœ«å°¾ï¼Œä»åå¾€å‰è¯»å–
+    fseek(log_file, 0, SEEK_END);
+    long file_size = ftell(log_file);
+    
+    // ä»æ–‡ä»¶æœ«å°¾å¼€å§‹ï¼ŒæŸ¥æ‰¾æœ€è¿‘çš„endæ ‡è®°
+    long pos = file_size - 1;
+    char buffer[1024];
+    bool found_end = false;
+    long end_pos = -1;
+    long start_pos = -1;
+    
+    // ä»åå¾€å‰æŸ¥æ‰¾endæ ‡è®°
+    while (pos >= 0 && pos >= file_size - 5000) { // æœ€å¤šå¾€å›æ‰¾5000å­—èŠ‚
+        fseek(log_file, pos, SEEK_SET);
+        fgets(buffer, sizeof(buffer), log_file);
+        
+        if (strstr(buffer, "==========end============")) {
+            found_end = true;
+            end_pos = pos;
+            break;
+        }
+        pos--;
     }
     
-    if (line_count == 0) {
-        printf("ÔİÎŞÊ¹ÓÃ¼ÇÂ¼\n");
+    if (!found_end) {
+        printf("æœªæ‰¾åˆ°å®Œæ•´çš„ä¸Šæ¬¡ä½¿ç”¨è®°å½•\n");
+        fclose(log_file);
+        system("pause");
+        return;
     }
+    
+    // ä»endæ ‡è®°å¾€å‰æ‰¾å¯¹åº”çš„startæ ‡è®°
+    pos = end_pos - 1;
+    bool found_start = false;
+    
+    while (pos >= 0) {
+        fseek(log_file, pos, SEEK_SET);
+        fgets(buffer, sizeof(buffer), log_file);
+        
+        if (strstr(buffer, "==========start==========")) {
+            found_start = true;
+            start_pos = pos;
+            break;
+        }
+        pos--;
+    }
+    
+    if (!found_start) {
+        printf("æœªæ‰¾åˆ°å¯¹åº”çš„å¼€å§‹è®°å½•\n");
+        fclose(log_file);
+        system("pause");
+        return;
+    }
+    
+    // è¯»å–æ•´ä¸ªåŒºå—çš„å†…å®¹
+    fseek(log_file, start_pos, SEEK_SET);
+    long block_size = end_pos - start_pos + 100; // +100ç¡®ä¿åŒ…å«endè¡Œ
+    char* block_content = (char*)malloc(block_size + 1);
+    fread(block_content, 1, block_size, log_file);
+    block_content[block_size] = '\0';
     
     fclose(log_file);
     
-    printf("\n=======================\n");
-    printf("°´ÈÎÒâ¼ü·µ»Ø...\n");
+    // è§£æåŒºå—å†…å®¹
+    printf("æ‰¾åˆ°ä¸Šæ¬¡ä½¿ç”¨è®°å½•ï¼š\n");
+    int last_function_status[8] = {0};
+    
+    char* line = strtok(block_content, "\n");
+    while (line) {
+        // è·³è¿‡æ ‡è®°è¡Œ
+        if (strstr(line, "==========start==========") || 
+            strstr(line, "==========end============")) {
+            line = strtok(NULL, "\n");
+            continue;
+        }
+        
+        int function_id, running_status;
+        if (sscanf(line, "[%*[^]]] used:%d, running:%d", &function_id, &running_status) == 2) {
+            if (function_id >= 1 && function_id <= 7) {
+                last_function_status[function_id] = running_status + 1;
+                printf("  åŠŸèƒ½%d: %s\n", function_id, running_status ? "è¿è¡Œä¸­" : "å·²åœæ­¢");
+            }
+        }
+        
+        line = strtok(NULL, "\n");
+    }
+    
+    // æ¢å¤åŠŸèƒ½ï¼ˆå’Œä¹‹å‰ç›¸åŒï¼‰
+    printf("\næ­£åœ¨æ¢å¤åŠŸèƒ½...\n");
+    int recovered_count = 0;
+    
+    for (int i = 1; i <= 7; i++) {
+        if (last_function_status[i] == 2) {
+            printf("æ¢å¤åŠŸèƒ½ %d: ", i);
+            
+            if (i == 2) {
+                printf("deepseek\n");
+                system("start https://chat.deepseek.com");
+                system(".\\source\\Web\\deekseep\\deekseep.html");
+                fc_using[2] = 1;
+                recovered_count++;
+            } else if (i == 5) {
+                printf("miHoYo\n");
+                fc_using[5] = 1;
+            } else if (i == 6) {
+                printf("é˜²çª¥å±\n");
+                system(".\\source\\ScreenWings.exe");
+                fc_using[6] = 1;
+                recovered_count++;
+            } else {
+                printf("åŠŸèƒ½ä»£ç å¾…å®ç°\n");
+            }
+            
+            Sleep(500);
+        }
+    }
+    
+    if (last_function_status[5] == 2) {
+        printf("\næ£€æµ‹åˆ°ä¸Šæ¬¡ä½¿ç”¨äº†miHoYoåŠŸèƒ½ï¼Œè¯·é€‰æ‹©æ¸¸æˆï¼š\n");
+        printf("1. åŸç¥\n");
+        printf("2. å´©åÂ·æ˜Ÿç©¹é“é“\n");
+        printf("è¾“å…¥å…¶ä»–å­—ç¬¦è·³è¿‡\n");
+        
+        int s = _getch();
+        if (s == '1') {
+            system("start https://ys.mihoyo.com/cloud/#");
+            system("start https://ys-api.mihoyo.com/event/download_porter/link/ys_cn/official/pc_backup316");
+            recovered_count++;
+        } else if (s == '2') {
+            system("start https://sr.mihoyo.com/cloud/#");
+            system("start https://autopatchcn.bhsr.com/client/cn/20251126183400_yvLQxEpk9CTuJjg6/gw_PC/StarRail_setup_1.12.0.exe");
+            recovered_count++;
+        }
+    }
+    
+    printf("\nå·²æ¢å¤ %d ä¸ªåŠŸèƒ½\n", recovered_count);
+    
+    free(block_content);
+    printf("æŒ‰ä»»æ„é”®ç»§ç»­...\n");
     _getch();
-    return;
+}
+string password(){
+	//to get password
 }
 void cmd()
 {
 	cout<<"     ---------------------------------------------\n";
 	cout<<"     |               \033[32mjnuo_tool 2.0.0\033[0m             |\n";
 	cout<<"     |       -----------------------------       |\n";
-	cout<<"     | \033[31m1. É±ËÀ¼«Óò\033[0m  \033[34m2. deepseek\033[0m  \033[35m3. °Ñzip²Ø½øÍ¼Æ¬\033[0m|\n";
-	cout<<"     | \033[36m4. ¶ÔÅÄ\033[0m  \033[90m5. miHoYo\033[0m  \033[91m6. ·À¿úÆÁ\033[0m  \033[95m7. ¼«ÓòÃÜÂë\033[0m|\n";
+	cout<<"     | \033[31m1. æ€æ­»æåŸŸ\033[0m  \033[34m2. deepseek\033[0m  \033[35m3. æŠŠzipè—è¿›å›¾ç‰‡\033[0m|\n";
+	cout<<"     | \033[36m4. å¯¹æ‹\033[0m  \033[90m5. miHoYo\033[0m  \033[91m6. é˜²çª¥å±\033[0m  \033[95m7. æåŸŸå¯†ç \033[0m|\n";
 	cout<<"     |       -----------------------------       |\n";
-	cout<<"     |                  \033[33mq. ÍË³ö\033[0m                  |\n";
+	cout<<"     |                  \033[33mq. é€€å‡º\033[0m                  |\n";
 	cout<<"     |       -----------------------------       |\n";
-	cout<<"     |       \033[33mx. Õâ´Î¸üĞÂ\033[0m    \033[33mr. ²é¿´Ê¹ÓÃ¼ÇÂ¼\033[0m      |\n";
+	cout<<"     |       \033[33mx. è¿™æ¬¡æ›´æ–°\033[0m    \033[33mr. æŸ¥çœ‹ä½¿ç”¨è®°å½•\033[0m      |\n";
 	cout<<"     ---------------------------------------------\n"; 
 }
 void fake_cmd()
@@ -139,10 +278,10 @@ void fake_cmd()
 	cout<<"     ---------------------------------------------\n";
 	cout<<"     |               \033[32mjnuo_tool ?.0\033[0m               |\n";
 	cout<<"     |       -----------------------------       |\n";
-	cout<<"     |                \033[31m±ğÍùºó¿´£¡£¡£¡\033[0m             |\n";
-	cout<<"     |                   \033[31mo.£¿£¿£¿\033[0m                |\n";
+	cout<<"     |                \033[31måˆ«å¾€åçœ‹ï¼ï¼ï¼\033[0m             |\n";
+	cout<<"     |                   \033[31mo.ï¼Ÿï¼Ÿï¼Ÿ\033[0m                |\n";
 	cout<<"     |       -----------------------------       |\n";
-	cout<<"     |                  \033[33mq. ÍË³ö\033[0m                  |\n";
+	cout<<"     |                  \033[33mq. é€€å‡º\033[0m                  |\n";
 	cout<<"     ---------------------------------------------\n"; 
 	char t;
 	do{
@@ -152,7 +291,7 @@ void fake_cmd()
 	cout<<"     ---------------------------------------------\n";
 	cout<<"     |               \033[32mjnuo_tool ?.0\033[0m               |\n";
 	cout<<"     |       -----------------------------       |\n";
-	cout<<"     |                \033[31mÊ²Ã´¶¼Ã»ÓĞ£¡£¡\033[0m             |\n";
+	cout<<"     |                \033[31mä»€ä¹ˆéƒ½æ²¡æœ‰ï¼ï¼\033[0m             |\n";
 	cout<<"     ---------------------------------------------\n";
 	system("pause"); 
 }
@@ -160,7 +299,7 @@ int main()
 {	system("title jnuo_tool 2.0.0"); 
 	//fake_cmd();
 	system("color A"); 
-	//start();
+	start();
 	system("color 7");
 	SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
 	log_program_start();
@@ -169,18 +308,22 @@ int main()
 	while(1)
 	{   system("cls");
 		cmd(); 
-		cout<<"¡°deepseek¡±ÔËĞĞ×´Ì¬£º" <<flag2<<endl; 
-		cout<<"¡°miHoYo¡±ÔËĞĞ×´Ì¬£º" <<flag5<<endl; 
-		cout<<"¡°·À¿úÆÁ¡±ÔËĞĞ×´Ì¬£º" <<flag6<<endl; 
+		cout<<"â€œdeepseekâ€è¿è¡ŒçŠ¶æ€ï¼š" <<flag2<<endl; 
+		cout<<"â€œmiHoYoâ€è¿è¡ŒçŠ¶æ€ï¼š" <<flag5<<endl; 
+		cout<<"â€œé˜²çª¥å±â€è¿è¡ŒçŠ¶æ€ï¼š" <<flag6<<endl; 
 		int n=_getch();
 		if(n==113||n==81)  break;
 		else if(n==106||n==74) system("start https://www.bilibili.com/video/BV1GJ411x7h7");
-		else if(n=='r'||n=='R') read_log_detailed();
+		else if(n=='r'||n=='R') {
+			cout<<"\n"; 
+			read_log_detailed();
+			continue;
+		}
 		else if(n==120||n==88){
-			cout<<"\033[32mjnuo_tool 2.0.0¸üĞÂÄÚÈİ\033[0m\n"; 
-			cout<<"1. ¸üĞÂÁËÈÕÖ¾£¬±£´æÁËÉÏ´ÎµÄÊ¹ÓÃÇé¿ö£¨×Ô¶¯´ò¿ª£©\n";
-			cout<<"2. ÓÅ»¯ÁËÊäÈë×Ö·ûµÄ²¿·Ö\n";
-			cout<<"3. ¼ÓÈëÁËĞÂÑ¡Ïî\n"; 
+			cout<<"\033[32mjnuo_tool 2.0.0æ›´æ–°å†…å®¹\033[0m\n"; 
+			cout<<"1. æ›´æ–°äº†æ—¥å¿—ï¼Œä¿å­˜äº†ä¸Šæ¬¡çš„ä½¿ç”¨æƒ…å†µï¼ˆè‡ªåŠ¨æ‰“å¼€ï¼‰\n";
+			cout<<"2. ä¼˜åŒ–äº†è¾“å…¥å­—ç¬¦çš„éƒ¨åˆ†\n";
+			cout<<"3. åŠ å…¥äº†æ–°é€‰é¡¹\n"; 
 			system("pause"); 
 			continue; 
 		} 
@@ -188,12 +331,12 @@ int main()
 			int s;
 			s=_getch();
 			if(s==106||s==74) fake_cmd();
-			else if(s==49) cout<<"ÊÔÊÔ×î¿ªÊ¼ÊäÈë¡°j¡±°É£¡";
-			else cout<<"°¡°É°¡°É......";
+			else if(s==49) cout<<"è¯•è¯•æœ€å¼€å§‹è¾“å…¥â€œjâ€å§ï¼";
+			else cout<<"å•Šå§å•Šå§......";
 		} 
 		else if(n==49)
 		{   int s;
-			cout<<"È·¶¨ÒªÉ±ËÀ¼«ÓòÂğ£¿\nÉ±ËÀºóĞèÒª\033[31m×ÔĞĞÑ°ÕÒ¿ì½İ·½Ê½\033[0m\njnuo¶ÔÄãµÄĞĞÎª\033[31m¸Å²»¸ºÔğ\033[0m [\033[31my\033[0m/\033[33mn\033[0m]";
+			cout<<"ç¡®å®šè¦æ€æ­»æåŸŸå—ï¼Ÿ\næ€æ­»åéœ€è¦\033[31mè‡ªè¡Œå¯»æ‰¾å¿«æ·æ–¹å¼\033[0m\njnuoå¯¹ä½ çš„è¡Œä¸º\033[31mæ¦‚ä¸è´Ÿè´£\033[0m [\033[31my\033[0m/\033[33mn\033[0m]";
 			s=_getch();
 			if(s==121||s==89)
 				system("taskkill /f /t /im studentmain.exe");
@@ -210,7 +353,7 @@ int main()
 			}
 			else{
 				flag2=0;
-				cout<<"´Ë¹¦ÄÜÕıÔÚÔËĞĞÖĞ£¬ÊÇ·ñÒÑ¾­¹Ø±Õ£¿[\033[31my\033[0m/\033[33mn\033[0m]";
+				cout<<"æ­¤åŠŸèƒ½æ­£åœ¨è¿è¡Œä¸­ï¼Œæ˜¯å¦å·²ç»å…³é—­ï¼Ÿ[\033[31my\033[0m/\033[33mn\033[0m]";
 				int s=_getch();
 				if(s=='y'||s=='Y'){
 					fc_using[2]=2;
@@ -220,22 +363,22 @@ int main()
 			}
 		}
 		else if(n==51)
-		{   cout<<"ÇëÈ·±£ÄúµÄ\033[31mÍ¼Æ¬£¨png£©ÎÄ¼ş\033[0mÒÑÃüÃûÎª\033[31m¡°1.png¡±\033[0m\n²¢ÇÒÄúµÄ\033[31mzipÎÄ¼ş\033[0mÒÑÃüÃûÎª\033[31m¡°2.zip¡±\033[0m\nËüÃÇĞèÒª\033[31mºÍ±¾³ÌĞòÔÚÍ¬Ò»¸öÄ¿Â¼Àï\033[0m ";
+		{   cout<<"è¯·ç¡®ä¿æ‚¨çš„\033[31må›¾ç‰‡ï¼ˆpngï¼‰æ–‡ä»¶\033[0må·²å‘½åä¸º\033[31mâ€œ1.pngâ€\033[0m\nå¹¶ä¸”æ‚¨çš„\033[31mzipæ–‡ä»¶\033[0må·²å‘½åä¸º\033[31mâ€œ2.zipâ€\033[0m\nå®ƒä»¬éœ€è¦\033[31må’Œæœ¬ç¨‹åºåœ¨åŒä¸€ä¸ªç›®å½•é‡Œ\033[0m ";
 		    cout<<"[\033[31my\033[0m/\033[33mn\033[0m] ";
 			int s;
 			s=_getch();
 			if(s=='y'||s=='Y')  system("copy /b 1.png + 2.zip end.png"); 
 			else        continue;
-			cout<<"ÈçÃ»ÓĞÏÔÊ¾ÕÒ²»µ½ÎÄ¼ş£¬ÇëÇ°Íù³ÌĞòËùÔÚÄ¿Â¼£¬ÀïÃæ»áÓĞÒ»¸öend.png£¬ËüÊÇ¿ÉÒÔÓÃÑ¹ËõÈí¼ş´ò¿ªµÄÍ¼Æ¬"; 
+			cout<<"å¦‚æ²¡æœ‰æ˜¾ç¤ºæ‰¾ä¸åˆ°æ–‡ä»¶ï¼Œè¯·å‰å¾€ç¨‹åºæ‰€åœ¨ç›®å½•ï¼Œé‡Œé¢ä¼šæœ‰ä¸€ä¸ªend.pngï¼Œå®ƒæ˜¯å¯ä»¥ç”¨å‹ç¼©è½¯ä»¶æ‰“å¼€çš„å›¾ç‰‡"; 
 			Sleep(2000); 
 		}
 		else if(n==52){
-			cout<<"ÇëÈ·±£ÄúµÄ\033[31mÕıÈ·Êä³öÎÄ¼ş\033[0mÒÑÃüÃûÎª\033[31m¡°1.ans¡±\033[0m\n²¢ÇÒÄúµÄ\033[31m³ÌĞòÊä³öÎÄ¼ş\033[0mÒÑÃüÃûÎª\033[31m¡°2.out¡±\033[0m\nËüÃÇĞèÒª\033[31mºÍ±¾³ÌĞòÔÚÍ¬Ò»¸öÄ¿Â¼Àï\033[0m ";
-		    cout<<"[\033[31my\033[0m/\033[33mn\033[0m] \n²»ÖªµÀÊ²Ã´ÊÇ¶ÔÅÄ£¿ÊäÈë\033[31m¡°x¡±\033[0m ";
+			cout<<"è¯·ç¡®ä¿æ‚¨çš„\033[31mæ­£ç¡®è¾“å‡ºæ–‡ä»¶\033[0må·²å‘½åä¸º\033[31mâ€œ1.ansâ€\033[0m\nå¹¶ä¸”æ‚¨çš„\033[31mç¨‹åºè¾“å‡ºæ–‡ä»¶\033[0må·²å‘½åä¸º\033[31mâ€œ2.outâ€\033[0m\nå®ƒä»¬éœ€è¦\033[31må’Œæœ¬ç¨‹åºåœ¨åŒä¸€ä¸ªç›®å½•é‡Œ\033[0m ";
+		    cout<<"[\033[31my\033[0m/\033[33mn\033[0m] \nä¸çŸ¥é“ä»€ä¹ˆæ˜¯å¯¹æ‹ï¼Ÿè¾“å…¥\033[31mâ€œxâ€\033[0m ";
 		    int s;
 		    s=_getch();
 		    if(s=='x'||s=='X'){
-		    	cout<<"¶ÔÅÄ£¬ÊÇ¶Ô±ÈÁ½¸öÎÄ¼ş\033[31mÊÇ·ñÓĞ²»Ò»Ñù\033[0mµÄµØ·½£¬Ò»°ãÓÃÓÚ±È½Ï×Ô¼ºµÄÊä³öÓëÕıÈ·´ğ°¸£¡";
+		    	cout<<"å¯¹æ‹ï¼Œæ˜¯å¯¹æ¯”ä¸¤ä¸ªæ–‡ä»¶\033[31mæ˜¯å¦æœ‰ä¸ä¸€æ ·\033[0mçš„åœ°æ–¹ï¼Œä¸€èˆ¬ç”¨äºæ¯”è¾ƒè‡ªå·±çš„è¾“å‡ºä¸æ­£ç¡®ç­”æ¡ˆï¼";
 			}
 			else if(s=='y'||s=='Y') system("fc 1.ans 2.out");
 			else continue; 
@@ -244,7 +387,7 @@ int main()
 			if(!flag5){
 				flag5=1;
 				int s;
-				cout<<"1. Ô­Éñ\n2. ±À»µ¡¤ĞÇñ·ÌúµÀ \n";
+				cout<<"1. åŸç¥\n2. å´©åÂ·æ˜Ÿç©¹é“é“ \n";
 				s=_getch();
 				fc_using[5]+=1;
 				log(5);
@@ -256,10 +399,10 @@ int main()
 					system("start https://sr.mihoyo.com/cloud/#");
 					system("start https://autopatchcn.bhsr.com/client/cn/20251126183400_yvLQxEpk9CTuJjg6/gw_PC/StarRail_setup_1.12.0.exe");
 				}
-				else cout<<"¿´ºÃÁË£¬Ğ¡×Ó£¡ÊÇ\033[31m1ºÍ2\033[0m£¡£¡£¡·£Äã´ÓÍ·À´¹ı£¡";
+				else cout<<"çœ‹å¥½äº†ï¼Œå°å­ï¼æ˜¯\033[31m1å’Œ2\033[0mï¼ï¼ï¼ç½šä½ ä»å¤´æ¥è¿‡ï¼";
 			}
 			else{
-				cout<<"´Ë¹¦ÄÜÕıÔÚÔËĞĞÖĞ£¬ÊÇ·ñÒÑ¾­¹Ø±Õ£¿[\033[31my\033[0m/\033[33mn\033[0m]";
+				cout<<"æ­¤åŠŸèƒ½æ­£åœ¨è¿è¡Œä¸­ï¼Œæ˜¯å¦å·²ç»å…³é—­ï¼Ÿ[\033[31my\033[0m/\033[33mn\033[0m]";
 				int s=_getch();
 				if(s=='y'||s=='Y'){
 					fc_using[5]=2;
@@ -273,27 +416,26 @@ int main()
 			if(!flag6){
 				flag6=1;
 				system(".\\source\\ScreenWings.exe");
-				cout<<"ÊäÈë\033[31mx\033[0m ½ÌÎÒÔõÃ´ÓÃ£¿\n";
-				cout<<"ÊäÈëÆäËû×Ö·û ¼ÌĞøÊ¹ÓÃjnuo_tool\n";
+				cout<<"è¾“å…¥\033[31mx\033[0m æ•™æˆ‘æ€ä¹ˆç”¨ï¼Ÿ\n";
+				cout<<"è¾“å…¥å…¶ä»–å­—ç¬¦ ç»§ç»­ä½¿ç”¨jnuo_tool\n";
 				int s;
 				s=_getch(); 
 				fc_using[6]+=1;
 				log(6);
 				if(s=='x'||s=='X'){
-					cout<<"³öÀ´ºó£¬»áÓĞ¸öĞ¡µçÄÔ£¬ÓĞWindowsÍ¼±ê£¬µãÒ»ÏÂ£¬±äºÚÁË£¬Í¬Ê±\n"; 
-					cout<<"ÓÒÉÏ½ÇµÄ\033[31m¡°X¡±\033[0m±äÎªÁË\033[31m¡°-¡±\033[0m¾ÍËµÃ÷³É¹¦ÁË£¡\n";
-					cout<<"È»ºóÇë×îĞ¡»¯£¬²¢ÍÏµ½¡°^¡±Àï£¨Òş²ØÍ¼±ê£©\n";
-					cout<<"Çë×¢Òâ£ºÊ¹ÓÃÊ±£¬\033[31m½ØÍ¼Ò²»áºÚÆÁ\033[0m£¡\n";
+					cout<<"å‡ºæ¥åï¼Œä¼šæœ‰ä¸ªå°ç”µè„‘ï¼Œæœ‰Windowså›¾æ ‡ï¼Œç‚¹ä¸€ä¸‹ï¼Œå˜é»‘äº†ï¼ŒåŒæ—¶\n"; 
+					cout<<"å³ä¸Šè§’çš„\033[31mâ€œXâ€\033[0må˜ä¸ºäº†\033[31mâ€œ-â€\033[0må°±è¯´æ˜æˆåŠŸäº†ï¼\n";
+					cout<<"ç„¶åè¯·æœ€å°åŒ–ï¼Œå¹¶æ‹–åˆ°â€œ^â€é‡Œï¼ˆéšè—å›¾æ ‡ï¼‰\n";
+					cout<<"è¯·æ³¨æ„ï¼šä½¿ç”¨æ—¶ï¼Œ\033[31mæˆªå›¾ä¹Ÿä¼šé»‘å±\033[0mï¼\n";
 					system("pause");
 					continue; 
 				}
 				else continue;
 			}
 			else{
-				cout<<"´Ë¹¦ÄÜÕıÔÚÔËĞĞÖĞ£¬ÊÇ·ñ¹Ø±Õ£¿[\033[31my\033[0m/\033[33mn\033[0m]";
+				cout<<"æ­¤åŠŸèƒ½æ­£åœ¨è¿è¡Œä¸­ï¼Œæ˜¯å¦å·²ç»å…³é—­ï¼Ÿ[\033[31my\033[0m/\033[33mn\033[0m]";
 				int s=_getch();
 				if(s=='y'||s=='Y'){
-					system("taskkill /f /t /im ScreenWings.exe");
 					fc_using[6]=2; 
 					log(6);
 					flag6=0;
@@ -302,16 +444,16 @@ int main()
 			}
 		} 
 		else if(n=='7') {
-			//pass
+			cout<<"æ­¤åŠŸèƒ½æš‚æ—¶æ— æ³•ä½¿ç”¨ï¼Œæ­£åœ¨å…¨åŠ›ä¿®å¤Bug";
 		}
-		else  cout<<"ÊäÈë´íÎó£¬ÇëÖØĞÂÊäÈë£¡" ;
+		else  cout<<"è¾“å…¥é”™è¯¯ï¼Œè¯·é‡æ–°è¾“å…¥ï¼" ;
 		Sleep(3000);
 	}
 	if (program_running) {
         program_running = false;
         log_program_end();
     }
-	cout<<"¸ĞĞ»ÄúµÄÊ¹ÓÃ£¡\n\nÔÙ¼û ©d(£ş¨Œ£ş)Bye~Bye~"; 
+	cout<<"æ„Ÿè°¢æ‚¨çš„ä½¿ç”¨ï¼\n\nå†è§ ãƒ¾(ï¿£â–½ï¿£)Bye~Bye~"; 
 	Sleep(3000); 
 }
 /*
@@ -329,4 +471,3 @@ int main()
        \@@@@@@@/      |@@@|      \@@@@@|       \@@@@@@@@@/           \@@@@@@@@@@@@@/
         -------       -----       ------        --------              -------------    
 */
-
