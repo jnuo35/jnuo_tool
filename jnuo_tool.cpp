@@ -1,6 +1,7 @@
 #include<bits/stdc++.h>
 #include<windows.h>
 #include<conio.h>
+#include<shellapi.h>
 using namespace std;
 int fc_using[8]={0};
 bool program_running = true;
@@ -22,7 +23,27 @@ void log_program_start() {
     fprintf(log_file, "==========start========== [%s]\n", time_str);
     fclose(log_file);
 }
-
+void RunBatInSourceFolderSimple() {
+    // 直接使用相对路径（相对于当前工作目录）
+    // 注意：如果程序从其他目录启动，这可能不可靠
+    
+    LPCWSTR relativePath = L"source\\ban_jiyu\\useU.bat";
+    
+    // 以管理员身份运行
+    SHELLEXECUTEINFO sei = { sizeof(sei) };
+    sei.lpVerb = "runas";
+    sei.lpFile = relativePath;
+    sei.nShow = SW_SHOW;
+    
+    if (!ShellExecuteEx(&sei)) {
+        DWORD err = GetLastError();
+        if (err == ERROR_CANCELLED) {
+            wcout <<"用户取消了操作" << endl;
+        } else {
+            wcout << "执行失败，错误代码: " << err << endl;
+        }
+    }
+}
 // 程序结束日志
 void log_program_end() {
     time_t now = time(NULL);
@@ -59,18 +80,18 @@ BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType)
 }
 void start()
 {
-	cout<<"jnuo制造";
+	printf("jnuo制造");
 	Sleep(1000);
 	system("cls");
 	for(int i=1;i<=2;i++) 
 	{
-		cout<<"jnuo制造.";
+		printf("jnuo制造.");
 		Sleep(1000);
 		system("cls");
-		cout<<"jnuo制造..";
+		printf("jnuo制造..");
 		Sleep(1000);
 		system("cls");
-		cout<<"jnuo制造...";
+		printf("jnuo制造...");
 		Sleep(1000);
 		system("cls");
 	}
@@ -261,38 +282,38 @@ string password(){
 }
 void cmd()
 {
-	cout<<"     ---------------------------------------------\n";
-	cout<<"     |               \033[32mjnuo_tool 2.0.0\033[0m             |\n";
-	cout<<"     |       -----------------------------       |\n";
-	cout<<"     | \033[31m1. 杀死极域\033[0m  \033[34m2. deepseek\033[0m  \033[35m3. 把zip藏进图片\033[0m|\n";
-	cout<<"     | \033[36m4. 对拍\033[0m  \033[90m5. miHoYo\033[0m  \033[91m6. 防窥屏\033[0m  \033[95m7. 极域密码\033[0m|\n";
-	cout<<"     |       -----------------------------       |\n";
-	cout<<"     |                  \033[33mq. 退出\033[0m                  |\n";
-	cout<<"     |       -----------------------------       |\n";
-	cout<<"     |       \033[33mx. 这次更新\033[0m    \033[33mr. 查看使用记录\033[0m      |\n";
-	cout<<"     ---------------------------------------------\n"; 
+	printf("     ---------------------------------------------\n");
+	printf("     |               \033[32mjnuo_tool 2.0.0\033[0m             |\n");
+	printf("     |       -----------------------------       |\n");
+	printf("     | \033[31m1. 杀死极域\033[0m  \033[34m2. deepseek\033[0m  \033[35m3. 把zip藏进图片\033[0m|\n");
+	printf("     | \033[36m4. 对拍\033[0m  \033[90m5. miHoYo\033[0m  \033[91m6. 防窥屏\033[0m  \033[95m7. 解除限制\033[0m|\n");
+	printf("     |       -----------------------------       |\n");
+	printf("     |                  \033[33mq. 退出\033[0m                  |\n");
+	printf("     |       -----------------------------       |\n");
+	printf("     |       \033[33mx. 这次更新\033[0m    \033[33mr. 查看使用记录\033[0m      |\n");
+	printf("     ---------------------------------------------\n"); 
 }
 void fake_cmd()
 {
 	system("cls"); 
-	cout<<"     ---------------------------------------------\n";
-	cout<<"     |               \033[32mjnuo_tool ?.0\033[0m               |\n";
-	cout<<"     |       -----------------------------       |\n";
-	cout<<"     |                \033[31m别往后看！！！\033[0m             |\n";
-	cout<<"     |                   \033[31mo.？？？\033[0m                |\n";
-	cout<<"     |       -----------------------------       |\n";
-	cout<<"     |                  \033[33mq. 退出\033[0m                  |\n";
-	cout<<"     ---------------------------------------------\n"; 
+	printf("     ---------------------------------------------\n");
+	printf("     |               \033[32mjnuo_tool ?.0\033[0m               |\n");
+	printf("     |       -----------------------------       |\n");
+	printf("     |                \033[31m别往后看！！！\033[0m             |\n");
+	printf("     |                   \033[31mo.？？？\033[0m                |\n");
+	printf("     |       -----------------------------       |\n");
+	printf("     |                  \033[33mq. 退出\033[0m                  |\n");
+	printf("     ---------------------------------------------\n"); 
 	char t;
 	do{
 		cin>>t;
 	}while(t!='o'||t!='O');
 	system("cls"); 
-	cout<<"     ---------------------------------------------\n";
-	cout<<"     |               \033[32mjnuo_tool ?.0\033[0m               |\n";
-	cout<<"     |       -----------------------------       |\n";
-	cout<<"     |                \033[31m什么都没有！！\033[0m             |\n";
-	cout<<"     ---------------------------------------------\n";
+	printf("     ---------------------------------------------\n");
+	printf("     |               \033[32mjnuo_tool ?.0\033[0m               |\n");
+	printf("     |       -----------------------------       |\n");
+	printf("     |                \033[31m什么都没有！！\033[0m             |\n");
+	printf("     ---------------------------------------------\n");
 	system("pause"); 
 }
 int main()
@@ -308,9 +329,9 @@ int main()
 	while(1)
 	{   system("cls");
 		cmd(); 
-		cout<<"“deepseek”运行状态：" <<flag2<<endl; 
-		cout<<"“miHoYo”运行状态：" <<flag5<<endl; 
-		cout<<"“防窥屏”运行状态：" <<flag6<<endl; 
+		printf("“deepseek”运行状态：%d\n",flag2); 
+		printf("“miHoYo”运行状态：%d\n",flag5); 
+		printf("“防窥屏”运行状态：%d\n",flag6); 
 		int n=_getch();
 		if(n==113||n==81)  break;
 		else if(n==106||n==74) system("start https://www.bilibili.com/video/BV1GJ411x7h7");
@@ -320,10 +341,10 @@ int main()
 			continue;
 		}
 		else if(n==120||n==88){
-			cout<<"\033[32mjnuo_tool 2.0.0更新内容\033[0m\n"; 
-			cout<<"1. 更新了日志，保存了上次的使用情况（自动打开）\n";
-			cout<<"2. 优化了输入字符的部分\n";
-			cout<<"3. 加入了新选项\n"; 
+			printf("\033[32mjnuo_tool 2.0.0更新内容\033[0m\n"); 
+			printf("1. 更新了日志，保存了上次的使用情况（自动打开）\n");
+			printf("2. 优化了输入字符的部分\n");
+			printf("3. 加入了新选项\n");
 			system("pause"); 
 			continue; 
 		} 
@@ -331,12 +352,12 @@ int main()
 			int s;
 			s=_getch();
 			if(s==106||s==74) fake_cmd();
-			else if(s==49) cout<<"试试最开始输入“j”吧！";
-			else cout<<"啊吧啊吧......";
+			else if(s==49) printf("试试最开始输入“j”吧！");
+			else printf("啊吧啊吧......");
 		} 
 		else if(n==49)
 		{   int s;
-			cout<<"确定要杀死极域吗？\n杀死后需要\033[31m自行寻找快捷方式\033[0m\njnuo对你的行为\033[31m概不负责\033[0m [\033[31my\033[0m/\033[33mn\033[0m]";
+			printf("确定要杀死极域吗？\n杀死后需要\033[31m自行寻找快捷方式\033[0m\njnuo对你的行为\033[31m概不负责\033[0m [\033[31my\033[0m/\033[33mn\033[0m]");
 			s=_getch();
 			if(s==121||s==89)
 				system("taskkill /f /t /im studentmain.exe");
@@ -353,7 +374,7 @@ int main()
 			}
 			else{
 				flag2=0;
-				cout<<"此功能正在运行中，是否已经关闭？[\033[31my\033[0m/\033[33mn\033[0m]";
+				printf("此功能正在运行中，是否已经关闭？[\033[31my\033[0m/\033[33mn\033[0m]");
 				int s=_getch();
 				if(s=='y'||s=='Y'){
 					fc_using[2]=2;
@@ -363,22 +384,22 @@ int main()
 			}
 		}
 		else if(n==51)
-		{   cout<<"请确保您的\033[31m图片（png）文件\033[0m已命名为\033[31m“1.png”\033[0m\n并且您的\033[31mzip文件\033[0m已命名为\033[31m“2.zip”\033[0m\n它们需要\033[31m和本程序在同一个目录里\033[0m ";
-		    cout<<"[\033[31my\033[0m/\033[33mn\033[0m] ";
+		{   printf("请确保您的\033[31m图片（png）文件\033[0m已命名为\033[31m“1.png”\033[0m\n并且您的\033[31mzip文件\033[0m已命名为\033[31m“2.zip”\033[0m\n它们需要\033[31m和本程序在同一个目录里\033[0m ");
+		    printf("[\033[31my\033[0m/\033[33mn\033[0m] ");
 			int s;
 			s=_getch();
 			if(s=='y'||s=='Y')  system("copy /b 1.png + 2.zip end.png"); 
 			else        continue;
-			cout<<"如没有显示找不到文件，请前往程序所在目录，里面会有一个end.png，它是可以用压缩软件打开的图片"; 
+			printf("如没有显示找不到文件，请前往程序所在目录，里面会有一个end.png，它是可以用压缩软件打开的图片"); 
 			Sleep(2000); 
 		}
 		else if(n==52){
-			cout<<"请确保您的\033[31m正确输出文件\033[0m已命名为\033[31m“1.ans”\033[0m\n并且您的\033[31m程序输出文件\033[0m已命名为\033[31m“2.out”\033[0m\n它们需要\033[31m和本程序在同一个目录里\033[0m ";
-		    cout<<"[\033[31my\033[0m/\033[33mn\033[0m] \n不知道什么是对拍？输入\033[31m“x”\033[0m ";
+			printf("请确保您的\033[31m正确输出文件和程序输出文件\033[0m已命名为\033[31m“2.out”\033[0m\n它们需要\033[31m和本程序在同一个目录里\033[0m ");
+		    printf("[\033[31my\033[0m/\033[33mn\033[0m] \n不知道什么是对拍？输入\033[31m“x”\033[0m ");
 		    int s;
 		    s=_getch();
 		    if(s=='x'||s=='X'){
-		    	cout<<"对拍，是对比两个文件\033[31m是否有不一样\033[0m的地方，一般用于比较自己的输出与正确答案！";
+		    	printf("对拍，是对比两个文件\033[31m是否有不一样\033[0m的地方，一般用于比较自己的输出与正确答案！");
 			}
 			else if(s=='y'||s=='Y') system("fc 1.ans 2.out");
 			else continue; 
@@ -399,10 +420,10 @@ int main()
 					system("start https://sr.mihoyo.com/cloud/#");
 					system("start https://autopatchcn.bhsr.com/client/cn/20251126183400_yvLQxEpk9CTuJjg6/gw_PC/StarRail_setup_1.12.0.exe");
 				}
-				else cout<<"看好了，小子！是\033[31m1和2\033[0m！！！罚你从头来过！";
+				else printf("看好了，小子！是\033[31m1和2\033[0m！！！罚你从头来过！");
 			}
 			else{
-				cout<<"此功能正在运行中，是否已经关闭？[\033[31my\033[0m/\033[33mn\033[0m]";
+				printf("此功能正在运行中，是否已经关闭？[\033[31my\033[0m/\033[33mn\033[0m]");
 				int s=_getch();
 				if(s=='y'||s=='Y'){
 					fc_using[5]=2;
@@ -416,24 +437,24 @@ int main()
 			if(!flag6){
 				flag6=1;
 				system(".\\source\\ScreenWings.exe");
-				cout<<"输入\033[31mx\033[0m 教我怎么用？\n";
-				cout<<"输入其他字符 继续使用jnuo_tool\n";
+				printf("输入\033[31mx\033[0m 教我怎么用？\n");
+				printf("输入其他字符 继续使用jnuo_tool\n");
 				int s;
 				s=_getch(); 
 				fc_using[6]+=1;
 				log(6);
 				if(s=='x'||s=='X'){
-					cout<<"出来后，会有个小电脑，有Windows图标，点一下，变黑了，同时\n"; 
-					cout<<"右上角的\033[31m“X”\033[0m变为了\033[31m“-”\033[0m就说明成功了！\n";
-					cout<<"然后请最小化，并拖到“^”里（隐藏图标）\n";
-					cout<<"请注意：使用时，\033[31m截图也会黑屏\033[0m！\n";
+					printf("出来后，会有个小电脑，有Windows图标，点一下，变黑了，同时\n"); 
+					printf("右上角的\033[31m“X”\033[0m变为了\033[31m“-”\033[0m就说明成功了！\n");
+					printf("然后请最小化，并拖到“^”里（隐藏图标）\n");
+					printf("请注意：使用时，\033[31m截图也会黑屏\033[0m！\n");
 					system("pause");
 					continue; 
 				}
 				else continue;
 			}
 			else{
-				cout<<"此功能正在运行中，是否已经关闭？[\033[31my\033[0m/\033[33mn\033[0m]";
+				printf("此功能正在运行中，是否已经关闭？[\033[31my\033[0m/\033[33mn\033[0m]");
 				int s=_getch();
 				if(s=='y'||s=='Y'){
 					fc_using[6]=2; 
@@ -444,16 +465,16 @@ int main()
 			}
 		} 
 		else if(n=='7') {
-			cout<<"此功能暂时无法使用，正在全力修复Bug";
+			RunBatInSourceFolderSimple();
 		}
-		else  cout<<"输入错误，请重新输入！" ;
+		else  printf("输入错误，请重新输入！") ;
 		Sleep(3000);
 	}
 	if (program_running) {
         program_running = false;
         log_program_end();
     }
-	cout<<"感谢您的使用！\n\n再见 ヾ(￣▽￣)Bye~Bye~"; 
+	printf("感谢您的使用！\n\n再见 ヾ(￣▽￣)Bye~Bye~"); 
 	Sleep(3000); 
 }
 /*
