@@ -5,6 +5,309 @@
 using namespace std;
 int fc_using[8]={0};
 bool program_running = true;
+// ==================== DeepSeek API 简化版（使用curl命令） ====================
+// 不需要额外头文件，不需要链接任何库！
+
+// DeepSeek API配置（请替换成你的真实API Key）
+const char* DEEPSEEK_API_KEY = "sk-4f3**************ad0";  // 保护API
+
+// ========== 编码转换函数 ==========
+
+// GBK转UTF-8
+std::string gbkToUtf8(const std::string& gbkStr) {
+	if (gbkStr.empty()) return "";
+	
+	int unicodeLen = MultiByteToWideChar(CP_ACP, 0, gbkStr.c_str(), -1, NULL, 0);
+	if (unicodeLen <= 0) return gbkStr;
+	
+	wchar_t* wideStr = new wchar_t[unicodeLen];
+	MultiByteToWideChar(CP_ACP, 0, gbkStr.c_str(), -1, wideStr, unicodeLen);
+	
+	int utf8Len = WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, NULL, 0, NULL, NULL);
+	if (utf8Len <= 0) {
+		delete[] wideStr;
+		return gbkStr;
+	}
+	
+	char* utf8Str = new char[utf8Len];
+	WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, utf8Str, utf8Len, NULL, NULL);
+	
+	std::string result(utf8Str);
+	delete[] wideStr;
+	delete[] utf8Str;
+	
+	return result;
+}
+
+// UTF-8转GBK
+std::string utf8ToGbk(const std::string& utf8Str) {
+	if (utf8Str.empty()) return "";
+	
+	int unicodeLen = MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, NULL, 0);
+	if (unicodeLen <= 0) return utf8Str;
+	
+	wchar_t* wideStr = new wchar_t[unicodeLen];
+	MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, wideStr, unicodeLen);
+	
+	int gbkLen = WideCharToMultiByte(CP_ACP, 0, wideStr, -1, NULL, 0, NULL, NULL);
+	if (gbkLen <= 0) {
+		delete[] wideStr;
+		return utf8Str;
+	}
+	
+	char* gbkStr = new char[gbkLen];
+	WideCharToMultiByte(CP_ACP, 0, wideStr, -1, gbkStr, gbkLen, NULL, NULL);
+	
+	std::string result(gbkStr);
+	delete[] wideStr;
+	delete[] gbkStr;
+	
+	return result;
+}
+
+// ========== JSON处理函数 ==========
+
+// JSON转义函数
+std::string escapeJsonString(const std::string& str) {
+	std::string escaped;
+	for (char c : str) {
+		switch (c) {
+			case '"': escaped += "\\\""; break;
+			case '\\': escaped += "\\\\"; break;
+			case '\n': escaped += "\\n"; break;
+			case '\r': escaped += "\\r"; break;
+			case '\t': escaped += "\\t"; break;
+			default: escaped += c; break;
+		}
+	}
+	return escaped;
+}
+
+// 从JSON响应中提取content内容
+std::string extractContent(const std::string& json) {
+	// 查找 "content" 字段
+	const char* searchKey = "\"content\"";
+	size_t pos = json.find(searchKey);
+	if (pos == std::string::npos) return "";
+	
+	// 找到冒号
+	pos = json.find(':', pos);
+	if (pos == std::string::npos) return "";
+	
+	// 找到引号开始
+	pos = json.find('"', pos);
+	if (pos == std::string::npos) return "";
+	pos++;
+	
+	// 提取内容直到下一个引号
+	size_t endPos = pos;
+	while (endPos < json.length()) {
+		if (json[endPos] == '"' && (endPos == 0 || json[endPos-1] != '\\')) {
+			break;
+		}
+		endPos++;
+	}
+	
+	if (endPos == std::string::npos) return "";
+	
+	std::string content = json.substr(pos, endPos - pos);
+	
+	// 处理转义字符
+	size_t escapePos;
+	while ((escapePos = content.find("\\n")) != std::string::npos) {
+		content.replace(escapePos, 2, "\n");
+	}
+	while ((escapePos = content.find("\\r")) != std::string::npos) {
+		content.replace(escapePos, 2, "\r");
+	}
+	while ((escapePos = content.find("\\t")) != std::string::npos) {
+		content.replace(escapePos, 2, "\t");
+	}
+	while ((escapePos = content.find("\\\"")) != std::string::npos) {
+		content.replace(escapePos, 2, "\"");
+	}
+	while ((escapePos = content.find("\\\\")) != std::string::npos) {
+		content.replace(escapePos, 2, "\\");
+	}
+	
+	return content;
+}
+
+// ========== DeepSeek API调用（使用curl命令） ==========
+
+// 调用DeepSeek API（使用系统curl）
+std::string callDeepSeek(const std::string& userMessage) {
+	// 构建JSON请求体
+	std::string requestBody = "{";
+	requestBody += "\"model\": \"deepseek-chat\",";
+	requestBody += "\"messages\": [";
+	requestBody += "{\"role\": \"user\", \"content\": \"" + escapeJsonString(userMessage) + "\"}";
+	requestBody += "],";
+	requestBody += "\"stream\": false,";
+	requestBody += "\"temperature\": 0.7";
+	requestBody += "}";
+	
+	// 创建临时文件
+	std::string requestFile = "temp_req_" + std::to_string(GetCurrentProcessId()) + ".txt";
+	std::string responseFile = "temp_res_" + std::to_string(GetCurrentProcessId()) + ".txt";
+	
+	// 写入请求内容
+	FILE* f = fopen(requestFile.c_str(), "w");
+	if (!f) {
+		return "ERROR:无法创建请求文件";
+	}
+	fprintf(f, "%s", requestBody.c_str());
+	fclose(f);
+	
+	// 构建curl命令
+	std::string command = "curl -s -X POST https://api.deepseek.com/chat/completions ";
+	command += "-H \"Content-Type: application/json\" ";
+	command += "-H \"Authorization: Bearer ";
+	command += DEEPSEEK_API_KEY;
+	command += "\" ";
+	command += "-d @" + requestFile;
+	command += " -o " + responseFile;
+	command += " --connect-timeout 30";
+	command += " --max-time 60";
+	
+	// 执行命令
+	int result = system(command.c_str());
+	
+	if (result != 0) {
+		remove(requestFile.c_str());
+		remove(responseFile.c_str());
+		return "ERROR:curl执行失败，请检查网络";
+	}
+	
+	// 读取响应
+	std::string response;
+	f = fopen(responseFile.c_str(), "r");
+	if (!f) {
+		remove(requestFile.c_str());
+		remove(responseFile.c_str());
+		return "ERROR:无法读取响应文件";
+	}
+	
+	char buffer[4096];
+	while (fgets(buffer, sizeof(buffer), f)) {
+		response += buffer;
+	}
+	fclose(f);
+	
+	// 清理临时文件
+	remove(requestFile.c_str());
+	remove(responseFile.c_str());
+	
+	// 检查响应是否为空
+	if (response.empty()) {
+		return "ERROR:API返回空响应";
+	}
+	
+	return response;
+}
+
+// ========== DeepSeek对话界面 ==========
+
+// DeepSeek对话界面
+void deepseekChat() {
+	system("cls");
+	
+	printf("╔══════════════════════════════════════════════════════════╗\n");
+	printf("║                    \033[34mDeepSeek AI 助手\033[0m                       ║\n");
+	printf("║══════════════════════════════════════════════════════════║\n");
+	printf("║  \033[33m说明：\033[0m直接输入问题开始对话，输入 \033[31mexit\033[0m 退出               ║\n");
+	printf("║  \033[33m提示：\033[0m每次提问独立，不保存历史记录                         ║\n");
+	printf("║  \033[33m要求：\033[0m需要联网，Windows 10/11 自带curl                      ║\n");
+	printf("╚══════════════════════════════════════════════════════════╝\n\n");
+	
+	// 检查curl是否可用
+	printf("正在检查网络连接...\n");
+	if (system("curl --version > nul 2>&1") != 0) {
+		printf("\033[31m[错误] 未找到curl命令！\033[0m\n");
+		printf("Windows 10/11 应该自带curl，如果确实没有，请安装curl\n");
+		printf("或使用Windows 10 1803以上版本\n");
+		printf("\n按任意键返回...");
+		_getch();
+		return;
+	}
+	
+	// 测试网络连接
+	printf("正在测试网络连接...\n");
+	if (system("ping -n 1 api.deepseek.com > nul 2>&1") != 0) {
+		printf("\033[33m[警告] 无法连接到api.deepseek.com，请检查网络\033[0m\n");
+		printf("按任意键继续尝试...");
+		_getch();
+	}
+	
+	printf("\n\033[32m准备就绪！开始对话吧~\033[0m\n\n");
+	
+	while (true) {
+		printf("\033[32m[你] \033[0m");
+		
+		// 读取用户输入
+		char input[2048];
+		if (!fgets(input, sizeof(input), stdin)) {
+			break;
+		}
+		
+		// 去除换行符
+		input[strcspn(input, "\n")] = 0;
+		std::string userInputGbk(input);
+		
+		// 去除首尾空格
+		userInputGbk.erase(0, userInputGbk.find_first_not_of(" \t"));
+		userInputGbk.erase(userInputGbk.find_last_not_of(" \t") + 1);
+		
+		// 检查退出
+		if (userInputGbk == "exit" || userInputGbk == "退出" || userInputGbk == "q") {
+			printf("\n\033[33m[系统] 已退出DeepSeek对话模式\033[0m\n");
+			break;
+		}
+		
+		if (userInputGbk.empty()) {
+			continue;
+		}
+		
+		// 显示思考动画
+		printf("\033[34m[DeepSeek] \033[0m正在思考");
+		for(int i = 0; i < 3; i++) {
+			printf(".");
+			fflush(stdout);
+			Sleep(300);
+		}
+		printf("\r\033[K");
+		
+		// GBK转UTF-8发送给API
+		std::string userInputUtf8 = gbkToUtf8(userInputGbk);
+		
+		// 调用API
+		std::string response = callDeepSeek(userInputUtf8);
+		
+		// 检查是否出错
+		if (response.find("ERROR:") == 0) {
+			printf("\033[31m[错误] %s\033[0m\n", response.c_str());
+			printf("请检查：\n");
+			printf("  1. API Key是否正确\n");
+			printf("  2. 网络连接是否正常\n");
+			printf("  3. API账户是否有余额\n\n");
+		} else {
+			// 提取回复内容
+			std::string replyUtf8 = extractContent(response);
+			if (!replyUtf8.empty()) {
+				// UTF-8转GBK显示
+				std::string replyGbk = utf8ToGbk(replyUtf8);
+				printf("\033[34m[DeepSeek] \033[0m%s\n\n", replyGbk.c_str());
+			} else {
+				printf("\033[31m[错误] 解析响应失败\033[0m\n");
+				// 调试模式（取消注释可查看原始响应）
+				// std::string responseGbk = utf8ToGbk(response);
+				// printf("原始响应: %s\n", responseGbk.c_str());
+			}
+		}
+		
+		printf("\n");
+	}
+}
 // 控制台信号处理函数
 // 程序开始日志
 void log_program_start() {
@@ -23,7 +326,7 @@ void log_program_start() {
     fprintf(log_file, "==========start========== [%s]\n", time_str);
     fclose(log_file);
 }
-void RunBatInSourceFolderSimple() {
+/*void RunBatInSourceFolderSimple() {
     // 直接使用相对路径（相对于当前工作目录）
     // 注意：如果程序从其他目录启动，这可能不可靠
     
@@ -43,7 +346,7 @@ void RunBatInSourceFolderSimple() {
             wcout << "执行失败，错误代码: " << err << endl;
         }
     }
-}
+}*/
 // 程序结束日志
 void log_program_end() {
     time_t now = time(NULL);
@@ -277,16 +580,16 @@ void read_log_detailed() {
     printf("按任意键继续...\n");
     _getch();
 }
-string password(){
-	//to get password
-}
+//string password(){
+//	//to get password
+//}
 void cmd()
 {
 	printf("     ---------------------------------------------\n");
 	printf("     |               \033[32mjnuo_tool 2.0.0\033[0m             |\n");
 	printf("     |       -----------------------------       |\n");
 	printf("     | \033[31m1. 杀死极域\033[0m  \033[34m2. deepseek\033[0m  \033[35m3. 把zip藏进图片\033[0m|\n");
-	printf("     | \033[36m4. 对拍\033[0m  \033[90m5. miHoYo\033[0m  \033[91m6. 防窥屏\033[0m  \033[95m7. 解除限制\033[0m|\n");
+	printf("     | \033[36m4. 对拍\033[0m  \033[90m5. miHoYo\033[0m  \033[91m6. 防窥屏\033[0m  \033[95m7. 暂无功能 \033[0m|\n");
 	printf("     |       -----------------------------       |\n");
 	printf("     |                  \033[33mq. 退出\033[0m                  |\n");
 	printf("     |       -----------------------------       |\n");
@@ -364,23 +667,42 @@ int main()
 			else 
 				continue;
 		}
-		else if(n==50){
-			if(!flag2){
-				flag2=1;
-				system("start https://chat.deepseek.com");
-				system(".\\source\\Web\\deekseep\\deekseep.html");  // Windows
-				fc_using[2]=1;
+		else if(n == 50) {  // 功能2: DeepSeek
+			if(!flag2) {
+				flag2 = 1;
+				fc_using[2] = 1;
 				log(2);
-			}
-			else{
-				flag2=0;
-				printf("此功能正在运行中，是否已经关闭？[\033[31my\033[0m/\033[33mn\033[0m]");
-				int s=_getch();
-				if(s=='y'||s=='Y'){
-					fc_using[2]=2;
+				
+				// 设置控制台编码
+				system("chcp 65001 > nul");
+				
+				// 启动DeepSeek对话
+				deepseekChat();
+				
+				// 恢复控制台编码
+				system("chcp 936 > nul");
+				
+				// 询问是否关闭功能
+				printf("\n是否关闭DeepSeek功能？[y/n]: ");
+				int s = _getch();
+				if(s == 'y' || s == 'Y') {
+					flag2 = 0;
+					fc_using[2] = 2;
 					log(2);
-					continue;
-				} 
+					printf("DeepSeek功能已关闭\n");
+				} else {
+					printf("DeepSeek功能继续运行\n");
+				}
+				Sleep(1000);
+			} else {
+				printf("此功能正在运行中，是否已经关闭？[\033[31my\033[0m/\033[33mn\033[0m]");
+				int s = _getch();
+				if(s == 'y' || s == 'Y') {
+					flag2 = 0;
+					fc_using[2] = 2;
+					log(2);
+				}
+				continue;
 			}
 		}
 		else if(n==51)
@@ -464,9 +786,9 @@ int main()
 				continue;
 			}
 		} 
-		else if(n=='7') {
-			RunBatInSourceFolderSimple();
-		}
+//		else if(n=='7') {
+//			RunBatInSourceFolderSimple();
+//		}
 		else  printf("输入错误，请重新输入！") ;
 		Sleep(3000);
 	}
