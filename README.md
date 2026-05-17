@@ -8,6 +8,6 @@
 ## 重大更新！！！
 * `jnuo_tool`决定调用`deepseek`来成为一个顶尖的tool!
 
-  **注**：由于api需要一定的成本，使用接入deepseek的jnuo_tool将要收费并限制使用次数
+  **注**：由于api需要一定的成本，使用接入deepseek的jnuo_tool将要收费并限制使用次数    
           开源的代码为**免费版**，用户将使用自己的api
   
